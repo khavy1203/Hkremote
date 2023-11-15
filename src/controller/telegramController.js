@@ -29,7 +29,7 @@ const botTelegram = async (app) => {
         console.log("check ctx chat id", ctx.chat);
 
         if (isFetchingData) {
-         
+
           if (!ctx?.message?.text) {
             isFetchingData = true;
             return;
@@ -65,7 +65,64 @@ const botTelegram = async (app) => {
       }
     });
 
-    bot.command("/addhv", async (ctx) => {
+    bot.command("addhv", async (ctx) => {
+      if (isFetchingData) {
+        isFetchingData = false;
+        // if (ctx.update.message.from.id != process.env.id_admin) {
+        //   await ctx.reply(
+        //     "Tính năng này chỉ dành cho Admin. Hãy liên hệ Admin để truy cập kiểm tra."
+        //   );
+        //   isFetchingData = true;
+        //   return;
+        // }
+        const input = ctx.message.text
+          .replace(/^\/\S+/, "")
+          .trim()
+          .split(" ");
+        console.log("input", input);
+        if (!input) {
+          await ctx.reply(helpMessage);
+          isFetchingData = true;
+          return;
+        }
+
+        const mhv = input[0]?.trim();
+        if (!constant.regexMHV.test(mhv)) {
+          await ctx.replyWithHTML(
+            "<b>Bạn hãy coppy toàn bộ mã học viên trong /dat. Ví dụ cú pháp : /addhv 52001-12345678-123456</b>"
+          );
+          isFetchingData = true;
+          return;
+        }
+        
+        const getData = await helpers.getDataInFileText(constant?.linkF);
+        if(getData && getData.length){
+          const getLinkFileData = getData.map(e => constant.regexLinkData (e));
+          if(getLinkFileData && getLinkFileData.length){
+            const getDataInLink = await helpers.getDataInFileText(constant?.linkF);
+
+            if(getDataInLink && getDataInLink.length){
+              console.log("data ",getDataInLink)
+            }else{
+              console.log("file dữ liệu trống")
+            }
+
+          }else{
+            await ctx.replyWithHTML(
+              "Không tìm thấy đường dẫn Link data trong file Link"
+            );
+          }
+        }else{
+          await ctx.replyWithHTML(
+            "File Link dữ liệu không tồn tại"
+          );
+        }
+      }
+      isFetchingData = true;
+      return;
+    });
+
+    bot.command("removehv", async (ctx) => {
       if (isFetchingData) {
         isFetchingData = false;
         await ctx.reply(helpMessage);
@@ -76,7 +133,7 @@ const botTelegram = async (app) => {
       return;
     });
 
-    bot.command("/removehv", async (ctx) => {
+    bot.command("deleteFile", async (ctx) => {
       if (isFetchingData) {
         isFetchingData = false;
         await ctx.reply(helpMessage);
@@ -87,7 +144,7 @@ const botTelegram = async (app) => {
       return;
     });
 
-    bot.command("/deleteFile", async (ctx) => {
+    bot.command("createFile", async (ctx) => {
       if (isFetchingData) {
         isFetchingData = false;
         await ctx.reply(helpMessage);
@@ -98,7 +155,7 @@ const botTelegram = async (app) => {
       return;
     });
 
-    bot.command("/createFile", async (ctx) => {
+    bot.command("autoReplace", async (ctx) => {
       if (isFetchingData) {
         isFetchingData = false;
         await ctx.reply(helpMessage);
@@ -109,18 +166,7 @@ const botTelegram = async (app) => {
       return;
     });
 
-    bot.command("/autoReplace", async (ctx) => {
-      if (isFetchingData) {
-        isFetchingData = false;
-        await ctx.reply(helpMessage);
-        isFetchingData = true;
-        return;
-      }
-      isFetchingData = true;
-      return;
-    });
-
-    bot.command("/autoInstall", async (ctx) => {
+    bot.command("autoInstall", async (ctx) => {
       if (isFetchingData) {
         isFetchingData = false;
         await ctx.reply(helpMessage);

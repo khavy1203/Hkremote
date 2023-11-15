@@ -1,3 +1,4 @@
+const fs = require("fs");
 function isNumberString(str) {
   // Sử dụng biểu thức chính quy để kiểm tra chuỗi
   // ^\d+$: Bắt đầu (^) và kết thúc ($) với một hoặc nhiều số (\d+)
@@ -24,9 +25,21 @@ function checkOutTime(startTime){
   return performance.now()-startTime >80000;
 }
 
+async function getDataInFileText  (file){
+  console.log('check file', file)
+  if (fs.existsSync(file)) {
+    const data = await fs.readFileSync(file);
+    return data.split('\n');
+  }
+  return [];
+}
+
+
+
 module.exports = {
   isNumberString,
   sleep,
   checkValueType,
-  checkOutTime
+  checkOutTime,
+  getDataInFileText
 };
