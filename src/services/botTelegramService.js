@@ -6,6 +6,7 @@ const path = require("path");
 const moment = require("moment");
 import constant from "../constant/constant";
 const sql = require("mssql");
+const child_process = require("child_process");
 
 const pathFolderFileExcels = path.join(__dirname + "..\\..\\") + "fileExcels";
 
@@ -38,7 +39,7 @@ const getNewImage = async () => {
                 `select ID, RIGHT(dbo.GetEcoString(SrcHV), LEN(dbo.GetEcoString(SrcHV)) - 24) as LinkHA from AnhHanhTrinh where SessionId = '${e.SessionId}'`
               );
               let newArrayLink = [];
-              if (arrImage.recordset.length >=7) {
+              if (arrImage.recordset.length >= 7) {
                 const deleteSessionFirstEnd = arrImage.recordset.slice(1, -1);
                 for (let i = 2; i < 5; i++) {
                   const getIndex = parseInt(deleteSessionFirstEnd.length / i);
@@ -47,7 +48,9 @@ const getNewImage = async () => {
                   } else {
                     newArrayLink.push(
                       deleteSessionFirstEnd[getIndex],
-                      deleteSessionFirstEnd[parseInt(getIndex+deleteSessionFirstEnd.length/2)]
+                      deleteSessionFirstEnd[
+                        parseInt(getIndex + deleteSessionFirstEnd.length / 2)
+                      ]
                     );
                   }
                 }
@@ -93,74 +96,73 @@ const getNewImage = async () => {
 };
 
 const getInfoStudent = async (name) => {
-	let connection;
-	try {
-		// Kết nối tới SQL Server
-		console.log("check constant.config", constant.config)
-		connection = await sql.connect(constant.config);
-		console.log('Connected to SQL Server');
+  let connection;
+  try {
+    // Kết nối tới SQL Server
+    console.log("check constant.config", constant.config);
+    connection = await sql.connect(constant.config);
+    console.log("Connected to SQL Server");
 
-		// Tạo một request để thực hiện truy vấn
-		const request = new sql.Request();
-		const typeOffName = checkValueType(name);
-		let optionQuery = "";
-		if (typeOffName) {
-			//là số
-			optionQuery = `
+    // Tạo một request để thực hiện truy vấn
+    const request = new sql.Request();
+    const typeOffName = checkValueType(name);
+    let optionQuery = "";
+    if (typeOffName) {
+      //là số
+      optionQuery = `
 				(
 					HV.SoCMT LIKE '%${name}%'
 					OR HV.MaDK LIKE '%${name}%'
-				)`
-		} else {
-			//là chuỗi
-			if (name.includes('-')) {
-				optionQuery = `
+				)`;
+    } else {
+      //là chuỗi
+      if (name.includes("-")) {
+        optionQuery = `
 					(
 						HV.MaDK like N'%${name}%'
-					)`
-			} else {
-				optionQuery = `
+					)`;
+      } else {
+        optionQuery = `
 					(
 						dbo.GetEcoString(HoTen) like N'%${name}%'
-					)`
-			}
-		}
-		// Truy vấn dữ liệu
-		console.log('check option', optionQuery)
-		const result = await request.query(`select *
+					)`;
+      }
+    }
+    // Truy vấn dữ liệu
+    console.log("check option", optionQuery);
+    const result = await request.query(`select *
 		FROM HocVienTH AS HV
 		WHERE 
 			${optionQuery}
 			`);
 
-		// Xử lý kết quả truy vấn tại đây
-		// Đóng kết nối
-		if (connection) {
-			try {
-				await connection.close();
-				return ({
-					EM: "Truy vấn thành công",
-					EC: 0,
-					DT: result.recordset,
-				})
-			} catch (err) {
-				return ({
-					EM: "Truy vấn thất bại",
-					EC: 1,
-					DT: [],
-				})
-			}
-		}
-
-	} catch (err) {
-		console.log('check err', err)
-		return ({
-			EM: "Truy vấn thất bại",
-			EC: -1,
-			DT: [],
-		})
-	}
-}
+    // Xử lý kết quả truy vấn tại đây
+    // Đóng kết nối
+    if (connection) {
+      try {
+        await connection.close();
+        return {
+          EM: "Truy vấn thành công",
+          EC: 0,
+          DT: result.recordset,
+        };
+      } catch (err) {
+        return {
+          EM: "Truy vấn thất bại",
+          EC: 1,
+          DT: [],
+        };
+      }
+    }
+  } catch (err) {
+    console.log("check err", err);
+    return {
+      EM: "Truy vấn thất bại",
+      EC: -1,
+      DT: [],
+    };
+  }
+};
 
 const getAllImageFromNumberCar = async (car, date) => {
   let connection;
@@ -185,7 +187,7 @@ const getAllImageFromNumberCar = async (car, date) => {
     // Đóng kết nối
     if (connection) {
       try {
-        console.log('check result',result.recordset )
+        console.log("check result", result.recordset);
         if (result.recordset.length > 0) {
           const data = await Promise.all(
             result.recordset.map(async (e) => {
@@ -194,12 +196,12 @@ const getAllImageFromNumberCar = async (car, date) => {
               );
               return {
                 ...e,
-                linkData:  arrImage?.recordset?.slice(1,-1),
+                linkData: arrImage?.recordset?.slice(1, -1),
               };
             })
           );
           await connection.close();
-          console.log('check data', data)
+          console.log("check data", data);
           return {
             EM: "Truy vấn thành công",
             EC: 0,
@@ -239,7 +241,9 @@ const getImageForStudent = async (mhv, date = null) => {
 
     // Tạo một request để thực hiện truy vấn
     const request = new sql.Request();
-    const addQuerryDate = date ? ` AND CAST (TimeSendCenter AS DATE) = '${date}'`:'';
+    const addQuerryDate = date
+      ? ` AND CAST (TimeSendCenter AS DATE) = '${date}'`
+      : "";
     // Truy vấn dữ liệu
     const result =
       await request.query(`select  ht.MaDK, hv.srcAvatar, dbo.GetEcoString(hv.HoTen) as HotenHV, dbo.GetEcoString(gv.HoTen) as HotenGV, ht.BienSo, TimeSendCenter, ht.ThoiDiemDangNhap, ht.ThoiDiemDangXuat, dbo.GetEcoString(ht.TongQuangDuong) as TongQuangDuong , cast (dbo.GetEcoString(ht.TongThoiGian) as float)/3600 as TongThoiGian ,  ht.SessionId 
@@ -261,7 +265,7 @@ const getImageForStudent = async (mhv, date = null) => {
                 `select ID, RIGHT(dbo.GetEcoString(SrcHV), LEN(dbo.GetEcoString(SrcHV)) - 24) as LinkHA from AnhHanhTrinh where SessionId = '${e.SessionId}'`
               );
               let newArrayLink = [];
-              if (arrImage.recordset.length >=7) {
+              if (arrImage.recordset.length >= 7) {
                 const deleteSessionFirstEnd = arrImage.recordset.slice(1, -1);
                 for (let i = 2; i < 5; i++) {
                   const getIndex = parseInt(deleteSessionFirstEnd.length / i);
@@ -270,7 +274,9 @@ const getImageForStudent = async (mhv, date = null) => {
                   } else {
                     newArrayLink.push(
                       deleteSessionFirstEnd[getIndex],
-                      deleteSessionFirstEnd[parseInt(getIndex+deleteSessionFirstEnd.length/2)]
+                      deleteSessionFirstEnd[
+                        parseInt(getIndex + deleteSessionFirstEnd.length / 2)
+                      ]
                     );
                   }
                 }
@@ -315,9 +321,32 @@ const getImageForStudent = async (mhv, date = null) => {
   }
 };
 
+const turnOffVs = async () => {
+  try {
+    const child = child_process.spawn("taskkill", ["/F", "/IM", "code.exe"], {
+      shell: true,
+    });
+    child.on("close", (code) => {
+      if (code === 0) {
+        console.log("Tất cả các ứng dụng Visual Studio Code đã được tắt");
+      } else {
+        console.log("Có lỗi xảy ra khi tắt các ứng dụng Visual Studio Code");
+      }
+    });
+  } catch (err) {
+    console.log("check err", err);
+    return {
+      EM: "Truy vấn thất bại",
+      EC: -1,
+      DT: [],
+    };
+  }
+};
+
 module.exports = {
   getNewImage,
   getInfoStudent,
   getAllImageFromNumberCar,
-  getImageForStudent
+  getImageForStudent,
+  turnOffVs,
 };

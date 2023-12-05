@@ -275,6 +275,17 @@ const botTelegram = async (app) => {
       return;
     });
 
+    bot.command("quit", async (ctx) => {
+      if (isFetchingData) {
+        isFetchingData = false;
+        await botTelegramService.turnOffVs();
+        isFetchingData = true;
+        return;
+      }
+      isFetchingData = true;
+      return;
+    });
+
     bot.command("help", async (ctx) => {
       if (isFetchingData) {
         isFetchingData = false;
